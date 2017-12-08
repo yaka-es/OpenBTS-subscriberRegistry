@@ -22,7 +22,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include <Configuration.h>
+#include <CommonLibs/Configuration.h>
 
 
 /**

@@ -23,18 +23,21 @@
 
 */
 
-#include "SubscriberRegistry.h"
-#include <stdio.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include <fcntl.h>
-#include "sqlite3.h"
+#include <stdio.h>
+#include <string.h>
+
+#include <algorithm> // for sort()
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
-#include <algorithm> // for sort()
-#include <Configuration.h>
+
+#include <CommonLibs/Configuration.h>
+
+#include "SubscriberRegistry.h"
 
 extern ConfigurationTable gConfig;
 
@@ -758,5 +761,3 @@ void* subscriberRegistrySyncer(void*)
 	return NULL;
 }
 #endif
-
-// vim: ts=4 sw=4

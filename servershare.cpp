@@ -23,19 +23,19 @@
 
 */
 
+#include <string.h>
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
-#include <Configuration.h>
-#include <Utils.h>
-#include <string.h>
 
-#include "servershare.h"
-#include "sqlite3.h"
-#include "Logger.h"
+#include <CommonLibs/Configuration.h>
+#include <CommonLibs/Logger.h>
+#include <CommonLibs/Utils.h>
+
 #include "SubscriberRegistry.h"
+#include "servershare.h"
 
 using namespace std;
 

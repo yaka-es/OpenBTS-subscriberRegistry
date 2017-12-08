@@ -26,14 +26,18 @@
 #ifndef SubscriberRegistry_H
 #define SubscriberRegistry_H
 
-#include <map>
 #include <stdlib.h>
-#include <Logger.h>
-#include <Timeval.h>
-#include <Threads.h>
+
+#include <map>
+
 #include <map>
 #include <string>
-#include "sqlite3.h"
+
+#include <sqlite3.h>
+
+#include <CommonLibs/Logger.h>
+#include <CommonLibs/Timeval.h>
+#include <CommonLibs/Threads.h>
 
 using namespace std;
 
@@ -239,5 +243,3 @@ void* subscriberRegistrySyncer(void*);
 
 
 #endif
-
-// vim: ts=4 sw=4
