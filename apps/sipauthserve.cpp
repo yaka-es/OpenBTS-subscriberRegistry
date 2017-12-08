@@ -1,27 +1,27 @@
-/*
-* Copyright 2011 Kestrel Signal Processing, Inc.
-* Copyright 2011, 2014 Range Networks, Inc.
-*
-* This software is distributed under the terms of the GNU Affero Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
+/* apps/sipauthserve.cpp */
+/*-
+ * Copyright 2011 Kestrel Signal Processing, Inc.
+ * Copyright 2011, 2014 Range Networks, Inc.
+ *
+ * This software is distributed under the terms of the GNU Affero Public License.
+ * See the COPYING file in the main directory for details.
+ *
+ * This use of this software may be subject to additional restrictions.
+ * See the LEGAL file in the main directory for details.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -51,8 +51,8 @@
 #include <NodeManager/JSONDB/JSONDB.h>
 #include <NodeManager/NodeManager.h>
 
-#include "servershare.h"
 #include "SubscriberRegistry.h"
+#include "servershare.h"
 
 using namespace std;
 
@@ -64,15 +64,15 @@ int my_udp_port;
 // just using this for the database access
 SubscriberRegistry gSubscriberRegistry;
 
-/** The remote node manager. */ 
+/** The remote node manager. */
 NodeManager gNodeManager;
 
-/** The JSON<->DB interface. */ 
+/** The JSON<->DB interface. */
 JSONDB gJSONDB;
 
 /** Application specific NodeManager logic for handling requests. */
-JsonBox::Object nmHandler(JsonBox::Object& request)
-{ 
+JsonBox::Object nmHandler(JsonBox::Object &request)
+{
 	JsonBox::Object response;
 	std::string command = request["command"].getString();
 	std::string action = request["action"].getString();
@@ -89,10 +89,10 @@ JsonBox::Object nmHandler(JsonBox::Object& request)
 
 void prettyPrint(const char *label, osip_message_t *sip)
 {
-	char *dest=NULL;
-	size_t length=0;
+	char *dest = NULL;
+	size_t length = 0;
 	int i = osip_message_to_str(sip, &dest, &length);
-	if (i!=0) {
+	if (i != 0) {
 		LOG(ERR) << "cannot get printable message";
 	} else {
 		LOG(INFO) << label << ":\n" << dest;
@@ -153,21 +153,20 @@ string imsiClean(string imsi)
 	return imsi;
 }
 
-
 char *processBuffer(char *buffer)
 {
 	int i;
 
 	// parse sip message
 	osip_message_t *sip;
-	i=osip_message_init(&sip);
-	if (i!=0) {
+	i = osip_message_init(&sip);
+	if (i != 0) {
 		LOG(ERR) << "cannot allocate";
 		osip_message_free(sip);
 		return NULL;
 	}
-	i=osip_message_parse(sip, buffer, strlen(buffer));
-	if (i!=0) {
+	i = osip_message_parse(sip, buffer, strlen(buffer));
+	if (i != 0) {
 		LOG(ERR) << "cannot parse sip message";
 		osip_message_free(sip);
 		return NULL;
@@ -179,8 +178,8 @@ char *processBuffer(char *buffer)
 	osip_message_t *response;
 	osip_message_clone(sip, &response);
 
-	osip_from_t * contact_header = (osip_from_t*)osip_list_get(&sip->contacts,0);
-	osip_uri_t* contact_url = contact_header->url; 
+	osip_from_t *contact_header = (osip_from_t *)osip_list_get(&sip->contacts, 0);
+	osip_uri_t *contact_url = contact_header->url;
 	char *remote_host = contact_url->host;
 	char *remote_port = contact_url->port;
 
@@ -189,7 +188,7 @@ char *processBuffer(char *buffer)
 	// newvia << "SIP/2.0/UDP localhost:5063;branch=1;received=string_address@foo.bar";
 	const char *my_ipaddress = "localhost";
 	newvia << "SIP/2.0/UDP " << my_ipaddress << ":" << my_udp_port << ";branch=1;received="
-		<< "string_address@foo.bar"; // << my_network.string_addr((struct sockaddr *)netaddr, netaddrlen, false);
+	       << "string_address@foo.bar"; // << my_network.string_addr((struct sockaddr *)netaddr, netaddrlen, false);
 	osip_message_append_via(response, newvia.str().c_str());
 
 	// no method
@@ -197,17 +196,18 @@ char *processBuffer(char *buffer)
 
 	string imsi = imsiClean(imsiFromSip(sip));
 	string imsiTo = imsiClean(imsiToSip(sip));
-	if ((imsi == "EXIT") && (imsiTo == "EXIT")) exit(0); // for testing only
+	if ((imsi == "EXIT") && (imsiTo == "EXIT"))
+		exit(0); // for testing only
 	if (!imsiFound(imsi)) {
 		LOG(NOTICE) << "imsi unknown";
 		// imsi problem => 404 IMSI Not Found
-		osip_message_set_status_code (response, 404);
-		osip_message_set_reason_phrase (response, osip_strdup("IMSI Not Found"));
+		osip_message_set_status_code(response, 404);
+		osip_message_set_reason_phrase(response, osip_strdup("IMSI Not Found"));
 	} else if (gConfig.defines("SubscriberRegistry.IgnoreAuthentication")) {
-                osip_message_set_status_code (response, 200);
-                osip_message_set_reason_phrase (response, osip_strdup("OK"));
-                LOG(INFO) << "success, imsi " << imsi << " registering for IP address " << remote_host;
-                gSubscriberRegistry.imsiSet(imsi,"ipaddr", remote_host, "port", remote_port);
+		osip_message_set_status_code(response, 200);
+		osip_message_set_reason_phrase(response, osip_strdup("OK"));
+		LOG(INFO) << "success, imsi " << imsi << " registering for IP address " << remote_host;
+		gSubscriberRegistry.imsiSet(imsi, "ipaddr", remote_host, "port", remote_port);
 	} else {
 		// look for rand and sres in Authorization header (assume imsi same as in from)
 		string randx;
@@ -218,18 +218,26 @@ char *processBuffer(char *buffer)
 		if (RAND && SRES) {
 			// find RAND digits
 			RAND += 6;
-			while (!isalnum(*RAND)) { RAND++; }
+			while (!isalnum(*RAND)) {
+				RAND++;
+			}
 			RAND[32] = 0;
-			int j=0;
+			int j = 0;
 			// FIXME -- These loops should use strspn instead.
-			while(isalnum(RAND[j])) { j++; }
+			while (isalnum(RAND[j])) {
+				j++;
+			}
 			RAND[j] = '\0';
 			// find SRES digits
 			SRES += 9;
-			while (!isalnum(*SRES)) { SRES++; }
-			int i=0;
+			while (!isalnum(*SRES)) {
+				SRES++;
+			}
+			int i = 0;
 			// FIXME -- These loops should use strspn instead.
-			while(isalnum(SRES[i])) { i++; }
+			while (isalnum(SRES[i])) {
+				i++;
+			}
 			SRES[i] = '\0';
 			LOG(INFO) << "rand = /" << RAND << "/";
 			LOG(INFO) << "sres = /" << SRES << "/";
@@ -237,8 +245,8 @@ char *processBuffer(char *buffer)
 		if (!RAND || !SRES) {
 			LOG(NOTICE) << "imsi " << imsi << " known, 1st register";
 			// no rand and sres => 401 Unauthorized
-			osip_message_set_status_code (response, 401);
-			osip_message_set_reason_phrase (response, osip_strdup("Unauthorized"));
+			osip_message_set_status_code(response, 401);
+			osip_message_set_reason_phrase(response, osip_strdup("Unauthorized"));
 			// but include rand in www_authenticate
 			osip_www_authenticate_t *auth;
 			osip_www_authenticate_init(&auth);
@@ -248,40 +256,43 @@ char *processBuffer(char *buffer)
 			// returning RAND in www_authenticate header
 			string randz = generateRand(imsi);
 			osip_www_authenticate_set_nonce(auth, osip_strdup(randz.c_str()));
-			i = osip_list_add (&response->www_authenticates, auth, -1);
-			if (i < 0) LOG(ERR) << "problem adding www_authenticate";
+			i = osip_list_add(&response->www_authenticates, auth, -1);
+			if (i < 0)
+				LOG(ERR) << "problem adding www_authenticate";
 		} else {
 			string kc;
 			bool sres_good = authenticate(imsi, RAND, SRES, &kc);
 			LOG(INFO) << "imsi " << imsi << " known, 2nd register, good = " << sres_good;
 			if (sres_good) {
 				// sres matches rand => 200 OK
-				osip_message_set_status_code (response, 200);
-				osip_message_set_reason_phrase (response, osip_strdup("OK"));
+				osip_message_set_status_code(response, 200);
+				osip_message_set_reason_phrase(response, osip_strdup("OK"));
 				if (kc.size() != 0) {
 					osip_authentication_info *auth;
 					osip_authentication_info_init(&auth);
 					osip_authentication_info_set_cnonce(auth, osip_strdup(kc.c_str()));
-					i = osip_list_add (&response->authentication_infos, auth, -1);
-					if (i < 0) LOG(ERR) << "problem adding authentication_infos";
+					i = osip_list_add(&response->authentication_infos, auth, -1);
+					if (i < 0)
+						LOG(ERR) << "problem adding authentication_infos";
 				}
 				// (pat 9-2013) Add the caller id.
 				static string calleridstr("callerid");
-				string callid = gSubscriberRegistry.imsiGet(imsi,calleridstr);
+				string callid = gSubscriberRegistry.imsiGet(imsi, calleridstr);
 				if (callid.size()) {
 					char buf[120];
-					// Per RFC3966 the telephone numbers should begin with "+" only if it is globally unique throughout the world.
-					// We should not add the "+" here, it should be in the database if appropriate.
-					snprintf(buf,120,"<tel:%s>",callid.c_str());
-					osip_message_set_header(response,"P-Associated-URI",buf);
+					// Per RFC3966 the telephone numbers should begin with "+" only if it is
+					// globally unique throughout the world. We should not add the "+" here, it
+					// should be in the database if appropriate.
+					snprintf(buf, 120, "<tel:%s>", callid.c_str());
+					osip_message_set_header(response, "P-Associated-URI", buf);
 				}
 				// And register it.
 				LOG(INFO) << "success, registering for IP address " << remote_host;
-				gSubscriberRegistry.imsiSet(imsi,"ipaddr", remote_host, "port", remote_port);
+				gSubscriberRegistry.imsiSet(imsi, "ipaddr", remote_host, "port", remote_port);
 			} else {
 				// sres does not match rand => 401 Unauthorized
-				osip_message_set_status_code (response, 401);
-				osip_message_set_reason_phrase (response, osip_strdup("Unauthorized"));
+				osip_message_set_status_code(response, 401);
+				osip_message_set_reason_phrase(response, osip_strdup("Unauthorized"));
 			}
 		}
 	}
@@ -300,17 +311,14 @@ char *processBuffer(char *buffer)
 	return dest;
 }
 
-
 #define BUFLEN 5000
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	// TODO: Properly parse and handle any arguments
 	if (argc > 1) {
 		for (int argi = 0; argi < argc; argi++) {
-			if (!strcmp(argv[argi], "--version") ||
-			    !strcmp(argv[argi], "-v")) {
+			if (!strcmp(argv[argi], "--version") || !strcmp(argv[argi], "-v")) {
 				cout << gVersionString << endl;
 			}
 			if (!strcmp(argv[argi], "--gensql")) {
@@ -330,7 +338,7 @@ main(int argc, char **argv)
 	char buf[BUFLEN];
 
 	LOG(ALERT) << argv[0] << " (re)starting";
-	srand ( time(NULL) + (int)getpid() );
+	srand(time(NULL) + (int)getpid());
 	my_udp_port = gConfig.getNum("SubscriberRegistry.Port");
 	gSubscriberRegistry.init();
 	gNodeManager.setAppLogicHandler(&nmHandler);
@@ -338,8 +346,8 @@ main(int argc, char **argv)
 
 	// init osip lib
 	osip_t *osip;
-	int i=osip_init(&osip);
-	if (i!=0) {
+	int i = osip_init(&osip);
+	if (i != 0) {
 		LOG(ALERT) << "cannot init sip lib";
 		exit(1);
 	}
@@ -349,11 +357,11 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	memset((char *) &si_me, 0, sizeof(si_me));
+	memset((char *)&si_me, 0, sizeof(si_me));
 	si_me.sin_family = AF_INET;
 	si_me.sin_port = htons(my_udp_port);
 	si_me.sin_addr.s_addr = htonl(INADDR_ANY);
-	if (bind(aSocket, (sockaddr*)&si_me, sizeof(si_me)) == -1) {
+	if (bind(aSocket, (sockaddr *)&si_me, sizeof(si_me)) == -1) {
 		LOG(ALERT) << "can't bind socket on port " << my_udp_port;
 		exit(1);
 	}
@@ -364,7 +372,7 @@ main(int argc, char **argv)
 		gConfig.purge();
 		socklen_t slen = sizeof(si_other);
 		memset(buf, 0, BUFLEN);
-		if (recvfrom(aSocket, buf, BUFLEN, 0, (sockaddr*)&si_other, &slen) == -1) {
+		if (recvfrom(aSocket, buf, BUFLEN, 0, (sockaddr *)&si_other, &slen) == -1) {
 			LOG(ERR) << "recvfrom problem";
 			continue;
 		}
@@ -376,7 +384,7 @@ main(int argc, char **argv)
 			continue;
 		}
 
-		if (sendto(aSocket, dest, strlen(dest), 0, (sockaddr*)&si_other, sizeof(si_other)) == -1) {
+		if (sendto(aSocket, dest, strlen(dest), 0, (sockaddr *)&si_other, sizeof(si_other)) == -1) {
 			LOG(ERR) << "sendto problem";
 			continue;
 		}

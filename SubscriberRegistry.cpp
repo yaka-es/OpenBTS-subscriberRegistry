@@ -1,27 +1,27 @@
-/*
-* Copyright 2011 Kestrel Signal Processing, Inc.
-* Copyright 2011, 2012, 2013, 2014 Range Networks, Inc.
-*
-* This software is distributed under the terms of the GNU Affero Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
+/* SubscriberRegistry.cpp */
+/*-
+ * Copyright 2011 Kestrel Signal Processing, Inc.
+ * Copyright 2011, 2012, 2013, 2014 Range Networks, Inc.
+ *
+ * This software is distributed under the terms of the GNU Affero Public License.
+ * See the COPYING file in the main directory for details.
+ *
+ * This use of this software may be subject to additional restrictions.
+ * See the LEGAL file in the main directory for details.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,137 +39,131 @@
 
 #include "SubscriberRegistry.h"
 
-extern ConfigurationTable gConfig;
-
-
 using namespace std;
 
-static const char* createRRLPTable = {
-    "CREATE TABLE IF NOT EXISTS RRLP ("
-		"id				INTEGER PRIMARY KEY, "
-		"name           VARCHAR(80) not null, "
-		"latitude       real not null, "
-		"longitude      real not null, "
-		"error          real not null, "
-		"time           text not null "
-    ")"
-};
+extern ConfigurationTable gConfig;
 
-static const char* createDDTable = {
-    "CREATE TABLE IF NOT EXISTS DIALDATA_TABLE ("
-		"id				INTEGER PRIMARY KEY, "
-		"exten           VARCHAR(40)     NOT NULL        DEFAULT '', "
-		"dial			VARCHAR(128)    NOT NULL        DEFAULT '' "
-    ")"
-};
+static const char *createRRLPTable = {
+	"CREATE TABLE IF NOT EXISTS RRLP ("
+	"id				INTEGER PRIMARY KEY, "
+	"name           VARCHAR(80) not null, "
+	"latitude       real not null, "
+	"longitude      real not null, "
+	"error          real not null, "
+	"time           text not null "
+	")"};
 
-static const char* createRateTable = {
-"create table if not exists rates (service varchar(30) not null, rate integer not null)"
-};
+static const char *createDDTable = {
+	"CREATE TABLE IF NOT EXISTS DIALDATA_TABLE ("
+	"id				INTEGER PRIMARY KEY, "
+	"exten           VARCHAR(40)     NOT NULL        DEFAULT '', "
+	"dial			VARCHAR(128)    NOT NULL        DEFAULT '' "
+	")"};
 
-static const char* createSBTable = {
-    "CREATE TABLE IF NOT EXISTS SIP_BUDDIES ("
-		"id                    integer primary key, "
-		"name                  VARCHAR(80) not null, "
-		"context               VARCHAR(80), "
-		"callingpres           VARCHAR(30) DEFAULT 'allowed_not_screened', "
-		"deny                  VARCHAR(95), "
-		"permit                VARCHAR(95), "
-		"secret                VARCHAR(80), "
-		"md5secret             VARCHAR(80), "
-		"remotesecret          VARCHAR(250), "
-		"transport             VARCHAR(10), "
-		"host                  VARCHAR(31) default '' not null, "
-		"nat                   VARCHAR(5) DEFAULT 'no' not null, "
-		"type                  VARCHAR(10) DEFAULT 'friend' not null, "
-		"accountcode           VARCHAR(20), "
-		"amaflags              VARCHAR(13), "
-		"callgroup             VARCHAR(10), "
-		"callerid              VARCHAR(80), "
-		"defaultip             VARCHAR(40) DEFAULT '0.0.0.0', "
-		"dtmfmode              VARCHAR(7) DEFAULT 'info', "
-		"fromuser              VARCHAR(80), "
-		"fromdomain            VARCHAR(80), "
-		"insecure              VARCHAR(4), "
-		"language              CHAR(2), "
-		"mailbox               VARCHAR(50), "
-		"pickupgroup           VARCHAR(10), "
-		"qualify               CHAR(3), "
-		"regexten              VARCHAR(80), "
-		"rtptimeout            CHAR(3), "
-		"rtpholdtimeout        CHAR(3), "
-		"setvar                VARCHAR(100), "
-		"disallow              VARCHAR(100) DEFAULT 'all', "
-		"allow                 VARCHAR(100) DEFAULT 'gsm' not null, "
-		"fullcontact           VARCHAR(80), "
-		"ipaddr                VARCHAR(45), "
-		"port                  int(5) DEFAULT 5062, "
-		"username              VARCHAR(80), "
-		"defaultuser           VARCHAR(80), "
-		"subscribecontext      VARCHAR(80), "
-		"directmedia           VARCHAR(3), "
-		"trustrpid             VARCHAR(3), "
-		"sendrpid              VARCHAR(3), "
-		"progressinband        VARCHAR(5), "
-		"promiscredir          VARCHAR(3), "
-		"useclientcode         VARCHAR(3), "
-		"callcounter           VARCHAR(3), "
-		"busylevel             int(11) default 1, "
-		"allowoverlap          VARCHAR(3) DEFAULT 'no', "
-		"allowsubscribe        VARCHAR(3) DEFAULT 'no', "
-		"allowtransfer         VARCHAR(3) DEFAULT 'no', "
-		"ignoresdpversion      VARCHAR(3) DEFAULT 'no', "
-		"template              VARCHAR(100), "
-		"videosupport          VARCHAR(6) DEFAULT 'no', "
-		"maxcallbitrate        int(11), "
-		"rfc2833compensate     VARCHAR(3) DEFAULT 'yes', "
-		"'session-timers'      VARCHAR(10) DEFAULT 'accept', "
-		"'session-expires'     int(6) DEFAULT 1800, "
-		"'session-minse'       int(6) DEFAULT 90, "
-		"'session-refresher'   VARCHAR(3) DEFAULT 'uas', "
-		"t38pt_usertpsource    VARCHAR(3), "
-		"outboundproxy         VARCHAR(250), "
-		"callbackextension     VARCHAR(250), "
-		"registertrying        VARCHAR(3) DEFAULT 'yes', "
-		"timert1               int(6) DEFAULT 500, "
-		"timerb                int(9), "
-		"qualifyfreq           int(6) DEFAULT 120, "
-		"contactpermit         VARCHAR(250), "
-		"contactdeny           VARCHAR(250), "
-		"lastms                int(11) DEFAULT 0 not null, "
-		"regserver             VARCHAR(100), "
-		"regseconds            int(11) DEFAULT 0 not null, "
-		"useragent             VARCHAR(100), "
-		"cancallforward        CHAR(3) DEFAULT 'yes' not null, "
-		"canreinvite           CHAR(3) DEFAULT 'no' not null, "
-		"mask                  VARCHAR(95), "
-		"musiconhold           VARCHAR(100), "
-		"restrictcid           CHAR(3), "
-		"calllimit             int(5) default 1, "
-		"WhiteListFlag         timestamp not null default '0', "
-		"WhiteListCode         varchar(8) not null default '0', "
-		"rand                  varchar(33) default '', "
-		"sres                  varchar(33) default '', "
-		"ki                    varchar(33) default '', "
-		"kc                    varchar(33) default '', "
-		"prepaid               int(1) DEFAULT 0 not null, "	// flag to indicate prepaid customer
-		"account_balance       int(9) default 0 not null, "	// current account, neg is debt, pos is credit
-		"RRLPSupported         int(1) default 1 not null, "
-  		"hardware              VARCHAR(20), "
-		"regTime               INTEGER default 0 NOT NULL, " // Unix time of most recent registration
-		"a3_a8                 varchar(45) default NULL"
-    ")"
-};
+static const char *createRateTable = {
+	"create table if not exists rates (service varchar(30) not null, rate integer not null)"};
 
-static const char* createMEMSBTable = {
-    "CREATE TABLE IF NOT EXISTS memcache.mem_sip_buddies ("
-		"username              varchar(80) primary key, "
-		"ipaddr                varchar(45), "
-		"port                  int(5) default 5062, "
-		"rand                  varchar(33) default '', "
-		"sres                  varchar(33) default ''"
-    ")"
-};
+static const char *createSBTable = {
+	"CREATE TABLE IF NOT EXISTS SIP_BUDDIES ("
+	"id                    integer primary key, "
+	"name                  VARCHAR(80) not null, "
+	"context               VARCHAR(80), "
+	"callingpres           VARCHAR(30) DEFAULT 'allowed_not_screened', "
+	"deny                  VARCHAR(95), "
+	"permit                VARCHAR(95), "
+	"secret                VARCHAR(80), "
+	"md5secret             VARCHAR(80), "
+	"remotesecret          VARCHAR(250), "
+	"transport             VARCHAR(10), "
+	"host                  VARCHAR(31) default '' not null, "
+	"nat                   VARCHAR(5) DEFAULT 'no' not null, "
+	"type                  VARCHAR(10) DEFAULT 'friend' not null, "
+	"accountcode           VARCHAR(20), "
+	"amaflags              VARCHAR(13), "
+	"callgroup             VARCHAR(10), "
+	"callerid              VARCHAR(80), "
+	"defaultip             VARCHAR(40) DEFAULT '0.0.0.0', "
+	"dtmfmode              VARCHAR(7) DEFAULT 'info', "
+	"fromuser              VARCHAR(80), "
+	"fromdomain            VARCHAR(80), "
+	"insecure              VARCHAR(4), "
+	"language              CHAR(2), "
+	"mailbox               VARCHAR(50), "
+	"pickupgroup           VARCHAR(10), "
+	"qualify               CHAR(3), "
+	"regexten              VARCHAR(80), "
+	"rtptimeout            CHAR(3), "
+	"rtpholdtimeout        CHAR(3), "
+	"setvar                VARCHAR(100), "
+	"disallow              VARCHAR(100) DEFAULT 'all', "
+	"allow                 VARCHAR(100) DEFAULT 'gsm' not null, "
+	"fullcontact           VARCHAR(80), "
+	"ipaddr                VARCHAR(45), "
+	"port                  int(5) DEFAULT 5062, "
+	"username              VARCHAR(80), "
+	"defaultuser           VARCHAR(80), "
+	"subscribecontext      VARCHAR(80), "
+	"directmedia           VARCHAR(3), "
+	"trustrpid             VARCHAR(3), "
+	"sendrpid              VARCHAR(3), "
+	"progressinband        VARCHAR(5), "
+	"promiscredir          VARCHAR(3), "
+	"useclientcode         VARCHAR(3), "
+	"callcounter           VARCHAR(3), "
+	"busylevel             int(11) default 1, "
+	"allowoverlap          VARCHAR(3) DEFAULT 'no', "
+	"allowsubscribe        VARCHAR(3) DEFAULT 'no', "
+	"allowtransfer         VARCHAR(3) DEFAULT 'no', "
+	"ignoresdpversion      VARCHAR(3) DEFAULT 'no', "
+	"template              VARCHAR(100), "
+	"videosupport          VARCHAR(6) DEFAULT 'no', "
+	"maxcallbitrate        int(11), "
+	"rfc2833compensate     VARCHAR(3) DEFAULT 'yes', "
+	"'session-timers'      VARCHAR(10) DEFAULT 'accept', "
+	"'session-expires'     int(6) DEFAULT 1800, "
+	"'session-minse'       int(6) DEFAULT 90, "
+	"'session-refresher'   VARCHAR(3) DEFAULT 'uas', "
+	"t38pt_usertpsource    VARCHAR(3), "
+	"outboundproxy         VARCHAR(250), "
+	"callbackextension     VARCHAR(250), "
+	"registertrying        VARCHAR(3) DEFAULT 'yes', "
+	"timert1               int(6) DEFAULT 500, "
+	"timerb                int(9), "
+	"qualifyfreq           int(6) DEFAULT 120, "
+	"contactpermit         VARCHAR(250), "
+	"contactdeny           VARCHAR(250), "
+	"lastms                int(11) DEFAULT 0 not null, "
+	"regserver             VARCHAR(100), "
+	"regseconds            int(11) DEFAULT 0 not null, "
+	"useragent             VARCHAR(100), "
+	"cancallforward        CHAR(3) DEFAULT 'yes' not null, "
+	"canreinvite           CHAR(3) DEFAULT 'no' not null, "
+	"mask                  VARCHAR(95), "
+	"musiconhold           VARCHAR(100), "
+	"restrictcid           CHAR(3), "
+	"calllimit             int(5) default 1, "
+	"WhiteListFlag         timestamp not null default '0', "
+	"WhiteListCode         varchar(8) not null default '0', "
+	"rand                  varchar(33) default '', "
+	"sres                  varchar(33) default '', "
+	"ki                    varchar(33) default '', "
+	"kc                    varchar(33) default '', "
+	"prepaid               int(1) DEFAULT 0 not null, " // flag to indicate prepaid customer
+	"account_balance       int(9) default 0 not null, " // current account, neg is debt, pos is credit
+	"RRLPSupported         int(1) default 1 not null, "
+	"hardware              VARCHAR(20), "
+	"regTime               INTEGER default 0 NOT NULL, " // Unix time of most recent registration
+	"a3_a8                 varchar(45) default NULL"
+	")"};
+
+static const char *createMEMSBTable = {
+	"CREATE TABLE IF NOT EXISTS memcache.mem_sip_buddies ("
+	"username              varchar(80) primary key, "
+	"ipaddr                varchar(45), "
+	"port                  int(5) default 5062, "
+	"rand                  varchar(33) default '', "
+	"sres                  varchar(33) default ''"
+	")"};
 
 int SubscriberRegistry::init()
 {
@@ -187,56 +181,59 @@ int SubscriberRegistry::init()
 		mDB = NULL;
 		return 1;
 	}
-	mNumSQLTries=gConfig.getNum("Control.NumSQLTries"); 
-	int rc = sqlite3_open(ldb.c_str(),&mDB);
+	mNumSQLTries = gConfig.getNum("Control.NumSQLTries");
+	int rc = sqlite3_open(ldb.c_str(), &mDB);
 	if (rc) {
 		LOG(EMERG) << "Cannot open SubscriberRegistry database: " << ldb << " error: " << sqlite3_errmsg(mDB);
 		sqlite3_close(mDB);
 		mDB = NULL;
 		return 1;
 	}
-	if (!sqlite3_command(mDB,createRRLPTable,mNumSQLTries)) {
+	if (!sqlite3_command(mDB, createRRLPTable, mNumSQLTries)) {
 		LOG(EMERG) << "Cannot create RRLP table";
 		return 1;
 	}
-	if (!sqlite3_command(mDB,createDDTable,mNumSQLTries)) {
+	if (!sqlite3_command(mDB, createDDTable, mNumSQLTries)) {
 		LOG(EMERG) << "Cannot create DIALDATA_TABLE table";
 		return 1;
 	}
-	if (!sqlite3_command(mDB,createRateTable,mNumSQLTries)) {
+	if (!sqlite3_command(mDB, createRateTable, mNumSQLTries)) {
 		LOG(EMERG) << "Cannot create rate table";
 		return 1;
 	}
-	if (!sqlite3_command(mDB,createSBTable,mNumSQLTries)) {
+	if (!sqlite3_command(mDB, createSBTable, mNumSQLTries)) {
 		LOG(EMERG) << "Cannot create SIP_BUDDIES table";
 		return 1;
 	}
 	// Set high-concurrency WAL mode.
-	if (!sqlite3_command(mDB,enableWAL,mNumSQLTries)) {
-		LOG(EMERG) << "Cannot enable WAL mode on database at " << ldb << ", error message: " << sqlite3_errmsg(mDB);
+	if (!sqlite3_command(mDB, enableWAL, mNumSQLTries)) {
+		LOG(EMERG) << "Cannot enable WAL mode on database at " << ldb
+			   << ", error message: " << sqlite3_errmsg(mDB);
 	}
 
 #ifndef SR_API_ONLY
 	// memory based sip_buddies table
-	if (!sqlite3_command(mDB,"attach database ':memory:' as memcache",mNumSQLTries)) {
+	if (!sqlite3_command(mDB, "attach database ':memory:' as memcache", mNumSQLTries)) {
 		LOG(EMERG) << "Cannot create memcache database";
 		return 1;
 	}
-	if (!sqlite3_command(mDB,createMEMSBTable,mNumSQLTries)) {
+	if (!sqlite3_command(mDB, createMEMSBTable, mNumSQLTries)) {
 		LOG(EMERG) << "Cannot create memcache mem_sip_buddies table";
 		return 1;
 	}
-	if (!sqlite3_command(mDB,"INSERT INTO mem_sip_buddies SELECT username, ipaddr, port, rand, sres FROM sip_buddies",mNumSQLTries)) {
+	if (!sqlite3_command(mDB,
+		    "INSERT INTO mem_sip_buddies SELECT username, ipaddr, port, rand, sres FROM sip_buddies",
+		    mNumSQLTries)) {
 		LOG(EMERG) << "Cannot populate mem_sip_buddies table with disk contents";
 		return 1;
 	}
-	if (!sqlite3_command(mDB,"ALTER TABLE mem_sip_buddies ADD dirty INTEGER DEFAULT 0",mNumSQLTries)) {
+	if (!sqlite3_command(mDB, "ALTER TABLE mem_sip_buddies ADD dirty INTEGER DEFAULT 0", mNumSQLTries)) {
 		LOG(EMERG) << "Cannot add dirty column to mem_sip_buddies table";
 		return 1;
 	}
 
 	// Start the sync thread
-	mSyncer.start((void*(*)(void*))subscriberRegistrySyncer,NULL);
+	mSyncer.start((void *(*)(void *))subscriberRegistrySyncer, NULL);
 #endif
 
 	return 0;
@@ -248,36 +245,37 @@ string SubscriberRegistry::getResultsAsString(string query)
 
 	if (sqlite3_prepare_statement(mDB, &stmt, query.c_str(), 5)) {
 		std::cout << " - sqlite3_prepare_statement() failed" << std::endl;
- 		return "";
+		return "";
 	}
 
 	int state;
 	int row = 0;
 	int col;
 	int colMax = sqlite3_column_count(stmt);
-	const char* colName;
-	const char* colText;
+	const char *colName;
+	const char *colText;
 	ostringstream colNames;
 	ostringstream colTexts;
 	while (1) {
 		state = sqlite3_step(stmt);
 		if (state == SQLITE_ROW) {
 			for (col = 0; col < colMax; col++) {
-				colName = (const char*)sqlite3_column_name(stmt, col);
-				colText = (const char*)sqlite3_column_text(stmt, col);
+				colName = (const char *)sqlite3_column_name(stmt, col);
+				colText = (const char *)sqlite3_column_text(stmt, col);
 
 				if (row == 0) {
 					colNames << colName << " ";
 				}
 				if (colText == NULL) {
-					colTexts << "NULL" << " ";
+					colTexts << "NULL"
+						 << " ";
 				} else {
 					colTexts << colText << " ";
 				}
 			}
 		} else if (state == SQLITE_DONE) {
 			break;
-		// TODO : handle more SQLITE_FAILURECODES here
+			// TODO : handle more SQLITE_FAILURECODES here
 		} else {
 			return " - failed in while(1) in } else {";
 		}
@@ -308,7 +306,7 @@ vector<string> SubscriberRegistry::getTableColumns(string tableName)
 
 	if (sqlite3_prepare_statement(mDB, &stmt, tmp.str().c_str(), 5)) {
 		std::cout << " - getTableColumns() - sqlite3_prepare_statement() failed" << std::endl;
- 		return colNames;
+		return colNames;
 	}
 	tmp.str("");
 
@@ -319,16 +317,16 @@ vector<string> SubscriberRegistry::getTableColumns(string tableName)
 		state = sqlite3_step(stmt);
 		if (state == SQLITE_ROW) {
 			for (col = 0; col < colMax; col++) {
-				tmp << (const char*)sqlite3_column_name(stmt, col);
+				tmp << (const char *)sqlite3_column_name(stmt, col);
 				colNames.push_back(tmp.str());
 				tmp.str("");
 			}
 		} else if (state == SQLITE_DONE) {
 			break;
-		// TODO : handle more SQLITE_FAILURECODES here
+			// TODO : handle more SQLITE_FAILURECODES here
 		} else {
 			std::cout << " - getTableColumns() - failed in while(1) in } else {" << std::endl;
-	 		return colNames;
+			return colNames;
 		}
 	}
 	sqlite3_finalize(stmt);
@@ -400,13 +398,16 @@ bool SubscriberRegistry::syncMemoryDB()
 
 	string cleanDirty = "update mem_sip_buddies set dirty = \"0\"";
 
-	string syncFromDiskAddNewEntries = "INSERT INTO mem_sip_buddies "
+	string syncFromDiskAddNewEntries =
+		"INSERT INTO mem_sip_buddies "
 		"(username, ipaddr, port, rand, sres, dirty) "
-		"SELECT sip_buddies.username, sip_buddies.ipaddr, sip_buddies.port, sip_buddies.rand, sip_buddies.sres, '0' FROM sip_buddies "
+		"SELECT sip_buddies.username, sip_buddies.ipaddr, sip_buddies.port, sip_buddies.rand, "
+		"sip_buddies.sres, '0' FROM sip_buddies "
 		"LEFT OUTER JOIN mem_sip_buddies ON (mem_sip_buddies.username=sip_buddies.username) "
 		"WHERE mem_sip_buddies.username IS NULL";
 
-	string syncFromDiskDeleteOldEntries = "DELETE FROM mem_sip_buddies "
+	string syncFromDiskDeleteOldEntries =
+		"DELETE FROM mem_sip_buddies "
 		"WHERE username IN "
 		"(SELECT mem_sip_buddies.username FROM mem_sip_buddies"
 		" LEFT JOIN sip_buddies ON mem_sip_buddies.username=sip_buddies.username"
@@ -455,17 +456,17 @@ bool SubscriberRegistry::syncMemoryDB()
 
 SubscriberRegistry::~SubscriberRegistry()
 {
-	if (mDB) sqlite3_close(mDB);
+	if (mDB)
+		sqlite3_close(mDB);
 }
-
-
 
 SubscriberRegistry::Status SubscriberRegistry::sqlLocal(const char *query, char **resultptr)
 {
 	LOG(INFO) << query;
 
 	if (!resultptr) {
-		if (!sqlite3_command(db(), query, mNumSQLTries)) return FAILURE;
+		if (!sqlite3_command(db(), query, mNumSQLTries))
+			return FAILURE;
 		return SUCCESS;
 	}
 
@@ -479,7 +480,7 @@ SubscriberRegistry::Status SubscriberRegistry::sqlLocal(const char *query, char 
 		sqlite3_finalize(stmt);
 		return FAILURE;
 	}
-	char *column = (char*)sqlite3_column_text(stmt, 0);
+	char *column = (char *)sqlite3_column_text(stmt, 0);
 	if (!column) {
 		LOG(ERR) << "Subscriber registry returned a NULL column.";
 		sqlite3_finalize(stmt);
@@ -490,13 +491,14 @@ SubscriberRegistry::Status SubscriberRegistry::sqlLocal(const char *query, char 
 	return SUCCESS;
 }
 
-
-char *SubscriberRegistry::sqlQuery(const char *unknownColumn, const char *table, const char *knownColumn, const char *knownValue)
+char *SubscriberRegistry::sqlQuery(
+	const char *unknownColumn, const char *table, const char *knownColumn, const char *knownValue)
 {
 	char *result = NULL;
 	SubscriberRegistry::Status st;
 	ostringstream os;
-	os << "select " << unknownColumn << " from " << table << " where " << knownColumn << " = \"" << knownValue << "\"";
+	os << "select " << unknownColumn << " from " << table << " where " << knownColumn << " = \"" << knownValue
+	   << "\"";
 	// try to find locally
 	st = sqlLocal(os.str().c_str(), &result);
 	if ((st == SUCCESS) && result) {
@@ -509,19 +511,20 @@ char *SubscriberRegistry::sqlQuery(const char *unknownColumn, const char *table,
 	return NULL;
 }
 
-
 /*
  * Check for two of the same values for a single unknown
  */
-char *SubscriberRegistry::sqlQuery2(const char *unknownColumn, const char *table, const char *knownColumn, const char *knownValue1, const char *knownValue2)
+char *SubscriberRegistry::sqlQuery2(const char *unknownColumn, const char *table, const char *knownColumn,
+	const char *knownValue1, const char *knownValue2)
 {
 	char *result = NULL;
 	SubscriberRegistry::Status st;
 	ostringstream os;
 	// select knownValue from table where knownColumn IN ('knownValue1', 'knownValue2')
-	os << "select " << unknownColumn << " from " << table << " where " << knownColumn << " IN (\'"
-			<< knownValue1 << "\', " << "\'" << knownValue2 << "\')";
-	//LOG(INFO) << "QUERY STRING = " << os.str().c_str();
+	os << "select " << unknownColumn << " from " << table << " where " << knownColumn << " IN (\'" << knownValue1
+	   << "\', "
+	   << "\'" << knownValue2 << "\')";
+	// LOG(INFO) << "QUERY STRING = " << os.str().c_str();
 
 	// try to find locally
 	st = sqlLocal(os.str().c_str(), &result);
@@ -535,16 +538,15 @@ char *SubscriberRegistry::sqlQuery2(const char *unknownColumn, const char *table
 	return NULL;
 }
 
-
 SubscriberRegistry::Status SubscriberRegistry::sqlUpdate(const char *stmt)
 {
 	LOG(INFO) << stmt;
- 	return sqlLocal(stmt, NULL);
+	return sqlLocal(stmt, NULL);
 }
 
 string SubscriberRegistry::imsiGet(string imsi, string key)
 {
-	string name = imsi.substr(0,4) == "IMSI" ? imsi : "IMSI" + imsi;
+	string name = imsi.substr(0, 4) == "IMSI" ? imsi : "IMSI" + imsi;
 	char *st = sqlQuery(key.c_str(), "sip_buddies", "username", name.c_str());
 	if (!st) {
 		LOG(INFO) << "cannot get key " << key << " for username " << name;
@@ -556,9 +558,10 @@ string SubscriberRegistry::imsiGet(string imsi, string key)
 #ifndef SR_API_ONLY
 bool SubscriberRegistry::imsiSet(string imsi, string key, string value)
 {
-	string name = imsi.substr(0,4) == "IMSI" ? imsi : "IMSI" + imsi;
+	string name = imsi.substr(0, 4) == "IMSI" ? imsi : "IMSI" + imsi;
 	ostringstream os;
-	os << "update mem_sip_buddies set dirty = \"1\", " << key << " = \"" << value << "\" where username = \"" << name << "\"";
+	os << "update mem_sip_buddies set dirty = \"1\", " << key << " = \"" << value << "\" where username = \""
+	   << name << "\"";
 
 	mLock.lock();
 	SubscriberRegistry::Status ret = sqlUpdate(os.str().c_str());
@@ -569,9 +572,10 @@ bool SubscriberRegistry::imsiSet(string imsi, string key, string value)
 
 bool SubscriberRegistry::imsiSet(string imsi, string key1, string value1, string key2, string value2)
 {
-	string name = imsi.substr(0,4) == "IMSI" ? imsi : "IMSI" + imsi;
+	string name = imsi.substr(0, 4) == "IMSI" ? imsi : "IMSI" + imsi;
 	ostringstream os;
-	os << "update mem_sip_buddies set dirty = \"1\", " << key1 << " = \"" << value1 << "\"," << key2 << " = \"" << value2 << "\" where username = \"" << name << "\"";
+	os << "update mem_sip_buddies set dirty = \"1\", " << key1 << " = \"" << value1 << "\"," << key2 << " = \""
+	   << value2 << "\" where username = \"" << name << "\"";
 
 	mLock.lock();
 	SubscriberRegistry::Status ret = sqlUpdate(os.str().c_str());
@@ -584,7 +588,7 @@ bool SubscriberRegistry::imsiSet(string imsi, string key1, string value1, string
 /*
  * Get IMSI from phone number
  * Should be able to get rid of this one
-*/
+ */
 char *SubscriberRegistry::getIMSI(const char *ISDN)
 {
 	if (!ISDN) {
@@ -594,7 +598,6 @@ char *SubscriberRegistry::getIMSI(const char *ISDN)
 	LOG(INFO) << "getIMSI(" << ISDN << ")";
 	return sqlQuery("dial", "dialdata_table", "exten", ISDN);
 }
-
 
 /*
  * This version handle phone number with or without a plus at the beginning
@@ -608,23 +611,22 @@ char *SubscriberRegistry::getIMSI2(const char *ISDN)
 		return NULL;
 	}
 	LOG(INFO) << "getIMSI2(" << ISDN << ")";
-	char* str2;
+	char *str2;
 	char localstr[50];
 	if (ISDN[0] == '+') {
-		str2 =  (char *) &ISDN[1];  // ISDN has plus remove plus for str2
-	} else  {
+		str2 = (char *)&ISDN[1]; // ISDN has plus remove plus for str2
+	} else {
 		// ISDN no plus  add plus to str2
 		strcpy(&localstr[0], "+");
-		strncat(localstr, ISDN, sizeof(localstr)-1);
-		localstr[sizeof(localstr)-1] = 0;
+		strncat(localstr, ISDN, sizeof(localstr) - 1);
+		localstr[sizeof(localstr) - 1] = 0;
 		str2 = localstr;
 	}
 	// Two strings one with plus one without
-	return sqlQuery2("dial", "dialdata_table", "exten", ISDN, (const char*) str2);
+	return sqlQuery2("dial", "dialdata_table", "exten", ISDN, (const char *)str2);
 }
 
-
-char *SubscriberRegistry::getCLIDLocal(const char* IMSI)
+char *SubscriberRegistry::getCLIDLocal(const char *IMSI)
 {
 	if (!IMSI) {
 		LOG(WARNING) << "SubscriberRegistry::getCLIDLocal attempting lookup of NULL IMSI";
@@ -634,9 +636,7 @@ char *SubscriberRegistry::getCLIDLocal(const char* IMSI)
 	return sqlQuery("callerid", "sip_buddies", "username", IMSI);
 }
 
-
-
-char *SubscriberRegistry::getCLIDGlobal(const char* IMSI)
+char *SubscriberRegistry::getCLIDGlobal(const char *IMSI)
 {
 	if (!IMSI) {
 		LOG(WARNING) << "SubscriberRegistry::getCLIDGlobal attempting lookup of NULL IMSI";
@@ -646,9 +646,7 @@ char *SubscriberRegistry::getCLIDGlobal(const char* IMSI)
 	return sqlQuery("callerid", "sip_buddies", "username", IMSI);
 }
 
-
-
-char *SubscriberRegistry::getRegistrationIP(const char* IMSI)
+char *SubscriberRegistry::getRegistrationIP(const char *IMSI)
 {
 	if (!IMSI) {
 		LOG(WARNING) << "SubscriberRegistry::getRegistrationIP attempting lookup of NULL IMSI";
@@ -658,9 +656,7 @@ char *SubscriberRegistry::getRegistrationIP(const char* IMSI)
 	return sqlQuery("ipaddr", "sip_buddies", "username", IMSI);
 }
 
-
-
-SubscriberRegistry::Status SubscriberRegistry::setRegTime(const char* IMSI)
+SubscriberRegistry::Status SubscriberRegistry::setRegTime(const char *IMSI)
 {
 	if (!IMSI) {
 		LOG(WARNING) << "SubscriberRegistry::setRegTime attempting set for NULL IMSI";
@@ -668,13 +664,11 @@ SubscriberRegistry::Status SubscriberRegistry::setRegTime(const char* IMSI)
 	}
 	unsigned now = (unsigned)time(NULL);
 	ostringstream os;
-	os << "update sip_buddies set regTime = " << now  << " where username = " << '"' << IMSI << '"';
+	os << "update sip_buddies set regTime = " << now << " where username = " << '"' << IMSI << '"';
 	return sqlUpdate(os.str().c_str());
 }
 
-
-
-SubscriberRegistry::Status SubscriberRegistry::addUser(const char* IMSI, const char* CLID)
+SubscriberRegistry::Status SubscriberRegistry::addUser(const char *IMSI, const char *CLID)
 {
 	if (!IMSI) {
 		LOG(WARNING) << "SubscriberRegistry::addUser attempting add of NULL IMSI";
@@ -686,28 +680,45 @@ SubscriberRegistry::Status SubscriberRegistry::addUser(const char* IMSI, const c
 	}
 	LOG(INFO) << "addUser(" << IMSI << "," << CLID << ")";
 	ostringstream os;
-	os << "insert into sip_buddies (name, username, type, context, host, callerid, canreinvite, allow, dtmfmode, ipaddr, port) values (";
+	os << "insert into sip_buddies (name, username, type, context, host, callerid, canreinvite, allow, dtmfmode, "
+	      "ipaddr, port) values (";
 	os << "\"" << IMSI << "\"";
 	os << ",";
 	os << "\"" << IMSI << "\"";
 	os << ",";
-	os << "\"" << "friend" << "\"";
+	os << "\""
+	   << "friend"
+	   << "\"";
 	os << ",";
-	os << "\"" << "phones" << "\"";
+	os << "\""
+	   << "phones"
+	   << "\"";
 	os << ",";
-	os << "\"" << "dynamic" << "\"";
+	os << "\""
+	   << "dynamic"
+	   << "\"";
 	os << ",";
 	os << "\"" << CLID << "\"";
 	os << ",";
-	os << "\"" << "no" << "\"";
+	os << "\""
+	   << "no"
+	   << "\"";
 	os << ",";
-	os << "\"" << "gsm" << "\"";
+	os << "\""
+	   << "gsm"
+	   << "\"";
 	os << ",";
-	os << "\"" << "info" << "\"";
+	os << "\""
+	   << "info"
+	   << "\"";
 	os << ",";
-	os << "\"" << "127.0.0.1" << "\"";
+	os << "\""
+	   << "127.0.0.1"
+	   << "\"";
 	os << ",";
-	os << "\"" << "5062" << "\"";
+	os << "\""
+	   << "5062"
+	   << "\"";
 	os << ")";
 	os << ";";
 	SubscriberRegistry::Status st = sqlUpdate(os.str().c_str());
@@ -721,7 +732,6 @@ SubscriberRegistry::Status SubscriberRegistry::addUser(const char* IMSI, const c
 	return st == SUCCESS && st2 == SUCCESS ? SUCCESS : FAILURE;
 }
 
-
 char *SubscriberRegistry::mapCLIDGlobal(const char *local)
 {
 	if (!local) {
@@ -730,28 +740,27 @@ char *SubscriberRegistry::mapCLIDGlobal(const char *local)
 	}
 	LOG(INFO) << "mapCLIDGlobal(" << local << ")";
 	char *IMSI = getIMSI2(local);
-	if (!IMSI) return NULL;
+	if (!IMSI)
+		return NULL;
 	char *global = getCLIDGlobal(IMSI);
 	free(IMSI);
 	return global;
 }
 
-SubscriberRegistry::Status SubscriberRegistry::RRLPUpdate(string name, string lat, string lon, string err){
+SubscriberRegistry::Status SubscriberRegistry::RRLPUpdate(string name, string lat, string lon, string err)
+{
 	ostringstream os;
-	os << "insert into RRLP (name, latitude, longitude, error, time) values (" <<
-	  '"' << name << '"' << "," <<
-	  lat << "," <<
-	  lon << "," <<
-	  err << "," <<
-	  "datetime('now')"
-	  ")";
+	os << "insert into RRLP (name, latitude, longitude, error, time) values (" << '"' << name << '"' << "," << lat
+	   << "," << lon << "," << err << ","
+	   << "datetime('now')"
+	      ")";
 	LOG(INFO) << os.str();
 	return sqlUpdate(os.str().c_str());
 }
 
 #ifndef SR_API_ONLY
 extern SubscriberRegistry gSubscriberRegistry;
-void* subscriberRegistrySyncer(void*)
+void *subscriberRegistrySyncer(void *)
 {
 	while (true) {
 		sleep(15);

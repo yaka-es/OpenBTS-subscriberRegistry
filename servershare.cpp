@@ -1,34 +1,34 @@
-/*
-* Copyright 2011 Kestrel Signal Processing, Inc.
-* Copyright 2011, 2014 Range Networks, Inc.
-*
-* This software is distributed under the terms of the GNU Affero Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
+/* servershare.cpp */
+/*-
+ * Copyright 2011 Kestrel Signal Processing, Inc.
+ * Copyright 2011, 2014 Range Networks, Inc.
+ *
+ * This software is distributed under the terms of the GNU Affero Public License.
+ * See the COPYING file in the main directory for details.
+ *
+ * This use of this software may be subject to additional restrictions.
+ * See the LEGAL file in the main directory for details.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
 
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
-#include <cstdlib>
 
 #include <CommonLibs/Configuration.h>
 #include <CommonLibs/Logger.h>
@@ -39,49 +39,29 @@
 
 using namespace std;
 
-
 extern ConfigurationTable gConfig;
 
 // just using this for the database access
 extern SubscriberRegistry gSubscriberRegistry;
-
-
 
 ConfigurationKeyMap getConfigurationKeys()
 {
 	ConfigurationKeyMap map;
 	ConfigurationKey *tmp;
 
-	tmp = new ConfigurationKey("SubscriberRegistry.A3A8","/OpenBTS/comp128",
-		"",
-		ConfigurationKey::CUSTOMERWARN,
-		ConfigurationKey::FILEPATH,
-		"",
-		false,
-		"Path to the program that implements the A3/A8 algorithm."
-	);
+	tmp = new ConfigurationKey("SubscriberRegistry.A3A8", "/OpenBTS/comp128", "", ConfigurationKey::CUSTOMERWARN,
+		ConfigurationKey::FILEPATH, "", false, "Path to the program that implements the A3/A8 algorithm.");
 	map[tmp->getName()] = *tmp;
 	delete tmp;
 
-	tmp = new ConfigurationKey("SubscriberRegistry.db","/var/lib/asterisk/sqlite3dir/sqlite3.db",
-		"",
-		ConfigurationKey::CUSTOMERWARN,
-		ConfigurationKey::FILEPATH,
-		"",
-		false,
-		"The location of the sqlite3 database holding the subscriber registry."
-	);
+	tmp = new ConfigurationKey("SubscriberRegistry.db", "/var/lib/asterisk/sqlite3dir/sqlite3.db", "",
+		ConfigurationKey::CUSTOMERWARN, ConfigurationKey::FILEPATH, "", false,
+		"The location of the sqlite3 database holding the subscriber registry.");
 	map[tmp->getName()] = *tmp;
 	delete tmp;
 
-	tmp = new ConfigurationKey("SubscriberRegistry.Port","5064",
-		"",
-		ConfigurationKey::CUSTOMERWARN,
-		ConfigurationKey::PORT,
-		"",
-		false,
-		"Port used by the SIP Authentication Server."
-	);
+	tmp = new ConfigurationKey("SubscriberRegistry.Port", "5064", "", ConfigurationKey::CUSTOMERWARN,
+		ConfigurationKey::PORT, "", false, "Port used by the SIP Authentication Server.");
 	map[tmp->getName()] = *tmp;
 	delete tmp;
 
@@ -125,10 +105,7 @@ string generateRand(string imsi)
 	return ret;
 }
 
-bool strEqual(string a, string b)
-{
-	return 0 == strcasecmp(a.c_str(), b.c_str());
-}
+bool strEqual(string a, string b) { return 0 == strcasecmp(a.c_str(), b.c_str()); }
 
 bool sresEqual(string a, string b)
 {
@@ -215,7 +192,8 @@ bool authenticate(string imsi, string randx, string sres, string *kc)
 		}
 		char sres2[26];
 		char *str = fgets(sres2, 26, f);
-		if (str != NULL && strlen(str) == 25) str[24] = 0;
+		if (str != NULL && strlen(str) == 25)
+			str[24] = 0;
 		if (str == NULL || strlen(str) != 24) {
 			LOG(CRIT) << "error: popen result failed";
 			return false;
@@ -226,7 +204,7 @@ bool authenticate(string imsi, string randx, string sres, string *kc)
 			return false;
 		}
 		// first 8 chars are SRES;  rest are Kc
-		*kc = sres2+8;
+		*kc = sres2 + 8;
 		sres2[8] = 0;
 		LOG(INFO) << "result = " << sres2;
 		ret = sresEqual(sres, sres2);
@@ -240,7 +218,8 @@ string join(string separator, vector<string> &strings)
 	string result("");
 	vector<string>::iterator it;
 	for (it = strings.begin(); it != strings.end(); it++) {
-		if (it != strings.begin()) result.append(separator);
+		if (it != strings.begin())
+			result.append(separator);
 		result.append(*it);
 	}
 	return result;
@@ -255,7 +234,7 @@ void split(char separator, string tosplit, vector<string> *fields)
 			fields->push_back(tosplit.substr(p));
 			break;
 		}
-		fields->push_back(tosplit.substr(p, q-p));
-		p = q+1;
+		fields->push_back(tosplit.substr(p, q - p));
+		p = q + 1;
 	}
 }

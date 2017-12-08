@@ -1,27 +1,27 @@
-/*
-* Copyright 2011 Kestrel Signal Processing, Inc.
-* Copyright 2011, 2012, 2014 Range Networks, Inc.
-*
-* This software is distributed under the terms of the GNU Affero Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
+/* SubscriberRegistry.h */
+/*-
+ * Copyright 2011 Kestrel Signal Processing, Inc.
+ * Copyright 2011, 2012, 2014 Range Networks, Inc.
+ *
+ * This software is distributed under the terms of the GNU Affero Public License.
+ * See the COPYING file in the main directory for details.
+ *
+ * This use of this software may be subject to additional restrictions.
+ * See the LEGAL file in the main directory for details.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef SubscriberRegistry_H
 #define SubscriberRegistry_H
@@ -29,32 +29,28 @@
 #include <stdlib.h>
 
 #include <map>
-
-#include <map>
 #include <string>
 
 #include <sqlite3.h>
 
 #include <CommonLibs/Logger.h>
-#include <CommonLibs/Timeval.h>
 #include <CommonLibs/Threads.h>
+#include <CommonLibs/Timeval.h>
 
 using namespace std;
 
 class SubscriberRegistry {
 
-	private:
-
-	sqlite3 *mDB;			///< database connection
-	unsigned mNumSQLTries;		///< Number of times to try an sqlite command before giving up.
+private:
+	sqlite3 *mDB;	  ///< database connection
+	unsigned mNumSQLTries; ///< Number of times to try an sqlite command before giving up.
 
 #ifndef SR_API_ONLY
-	mutable Mutex mLock;	///< control for multithreaded read/write access to the memory based sip_buddies table
-	Thread mSyncer;			///< thread responsible for synchronizing the memory and disk based sip_buddies tables
+	mutable Mutex mLock; ///< control for multithreaded read/write access to the memory based sip_buddies table
+	Thread mSyncer;      ///< thread responsible for synchronizing the memory and disk based sip_buddies tables
 #endif
 
-	public:
-
+public:
 	~SubscriberRegistry();
 
 	/**
@@ -64,18 +60,13 @@ class SubscriberRegistry {
 	int init();
 
 	typedef enum {
-		SUCCESS=0,		///< operation successful
-		FAILURE=1,		///< operation not successful
-		DELAYED=2,		///< operation successful, but effect delayed
-		TRYAGAIN=3		///< operation not attempted, try again later
+		SUCCESS = 0, ///< operation successful
+		FAILURE = 1, ///< operation not successful
+		DELAYED = 2, ///< operation successful, but effect delayed
+		TRYAGAIN = 3 ///< operation not attempted, try again later
 	} Status;
 
-
-	sqlite3 *db()
-	{
-		return mDB;
-	}
-
+	sqlite3 *db() { return mDB; }
 
 	/**
 		Grab the memory based sqlite db as a table string
@@ -106,8 +97,8 @@ class SubscriberRegistry {
 		@return A C-string to be freed by the caller,
 			NULL if the ISDN cannot be resolved.
 	*/
-	char* getIMSI(const char* ISDN);
-	char* getIMSI2(const char *ISDN); // This version works with a plus
+	char *getIMSI(const char *ISDN);
+	char *getIMSI2(const char *ISDN); // This version works with a plus
 
 	/**
 		Given an IMSI, return the local CLID, which should be a numeric address.
@@ -115,7 +106,7 @@ class SubscriberRegistry {
 		@return A C-string to be freed by the caller,
 			NULL if the IMSI isn't found.
 	*/
-	char* getCLIDLocal(const char* IMSI);
+	char *getCLIDLocal(const char *IMSI);
 
 	/**
 		Given an IMSI, return the global CLID, which should be a numeric address.
@@ -123,7 +114,7 @@ class SubscriberRegistry {
 		@return A C-string to be freed by the caller,
 			NULL if the IMSI isn't found.
 	*/
-	char* getCLIDGlobal(const char* IMSI);
+	char *getCLIDGlobal(const char *IMSI);
 
 	/**
 		Given an IMSI, return the IP address of the most recent registration.
@@ -131,7 +122,7 @@ class SubscriberRegistry {
 		@return A C-string to be freed by the caller, "111.222.333.444:port",
 			NULL if the ISMI isn't registered.
 	*/
-	char* getRegistrationIP(const char* IMSI);
+	char *getRegistrationIP(const char *IMSI);
 
 	/**
 		Get a subscriber's property.
@@ -165,25 +156,21 @@ class SubscriberRegistry {
 		@param IMSI The user's IMSI or SIP username.
 		@param CLID The user's local CLID.
 	*/
-	Status addUser(const char* IMSI, const char* CLID);
-
+	Status addUser(const char *IMSI, const char *CLID);
 
 	/**
 		Remove a user from the SubscriberRegistry.
 		@param IMSI The user's IMSI or SIP username.
 	*/
-	Status removeUser(const char* IMSI);
-
+	Status removeUser(const char *IMSI);
 
 	/**
 		Set the current time as the time of the most recent registration for an IMSI.
 		@param IMSI The user's IMSI or SIP username.
 	*/
-	Status setRegTime(const char* IMSI);
-
+	Status setRegTime(const char *IMSI);
 
 	char *mapCLIDGlobal(const char *local);
-
 
 	/**
 		Update the RRLP location for user
@@ -194,19 +181,13 @@ class SubscriberRegistry {
 	*/
 	Status RRLPUpdate(string name, string lat, string lon, string err);
 
-
-	private:
-
-
-
+private:
 	/**
 		Run sql statments locally.
 		@param stmt The sql statements.
 		@param resultptr Set this to point to the result of executing the statements.
 	*/
 	Status sqlLocal(const char *stmt, char **resultptr);
-
-
 
 	/**
 		Run an sql query (select unknownColumn from table where knownColumn = knownValue).
@@ -217,29 +198,25 @@ class SubscriberRegistry {
 	*/
 	char *sqlQuery(const char *unknownColumn, const char *table, const char *knownColumn, const char *knownValue);
 
-
 	/**
-			Run an sql query (select unknownColumn from table where knownColumn = knownValue).
-			@param unknownColumn The column whose value you want.
-			@param table The table to look in.
-			@param knownColumn The column with the value you know.
-			@param knownValue1 The first known value of knownColumn.
-			@param knownValue2 The second known value of knownColumn.
+		Run an sql query (select unknownColumn from table where knownColumn = knownValue).
+		@param unknownColumn The column whose value you want.
+		@param table The table to look in.
+		@param knownColumn The column with the value you know.
+		@param knownValue1 The first known value of knownColumn.
+		@param knownValue2 The second known value of knownColumn.
 	*/
-	char *sqlQuery2(const char *unknownColumn, const char *table, const char *knownColumn, const char *knownValue1, const char *knownValue2);
-
+	char *sqlQuery2(const char *unknownColumn, const char *table, const char *knownColumn, const char *knownValue1,
+		const char *knownValue2);
 
 	/**
 		Run an sql update.
 		@param stmt The update statement.
 	*/
 	Status sqlUpdate(const char *stmt);
-
-
 };
 
 /** Periodically triggers SubscriberRegistry::syncMemoryDB(). */
-void* subscriberRegistrySyncer(void*);
-
+void *subscriberRegistrySyncer(void *);
 
 #endif
