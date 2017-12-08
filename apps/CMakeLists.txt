@@ -26,3 +26,9 @@ target_link_libraries(comp128
 	openbts-common
 	openbts-nodemanager
 )
+
+install(TARGETS comp128 sipauthserve
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+)
